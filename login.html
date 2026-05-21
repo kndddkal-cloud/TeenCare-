@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+  <!-- นำเข้า Lucide Icons เพื่อความสวยงาม -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+    :root {
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --bg-color: #f8fafc;
+        --text-main: #1e293b;
+        --text-sub: #64748b;
+        --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+
+    body { 
+        font-family: 'Sarabun', sans-serif; 
+        background-color: var(--bg-color); 
+        margin: 0; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        color: var(--text-main); 
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+    }
+
+    .login-box { 
+        background: white; 
+        padding: 40px 30px; 
+        border-radius: 24px; 
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+
+    .logo-icon {
+        width: 64px;
+        height: 64px;
+        background: #e0e7ff;
+        color: var(--primary);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    h2 { margin: 0 0 10px 0; font-size: 24px; font-weight: 600; }
+    p { margin: 0 0 30px 0; color: var(--text-sub); font-size: 14px; }
+
+    .input-group { text-align: left; margin-bottom: 20px; }
+    .input-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: var(--text-main); }
+    
+    input { 
+        width: 100%;
+        padding: 12px 16px; 
+        border-radius: 12px; 
+        border: 1px solid #e2e8f0; 
+        font-size: 16px; 
+        box-sizing: border-box;
+        transition: all 0.2s;
+        font-family: 'Sarabun';
+    }
+    input:focus { outline: none; border-color: var(--primary); ring: 3px rgba(99, 102, 241, 0.2); }
+
+    button { 
+        width: 100%;
+        padding: 14px; 
+        background: var(--primary); 
+        color: white; 
+        border: none; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        font-size: 16px; 
+        font-weight: 600;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    button:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; }
+
+    /* OTP Section - Hidden by default */
+    #otp-section { 
+        display: none; 
+        margin-top: 25px; 
+        padding-top: 25px; 
+        border-top: 1px solid #f1f5f9;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Toast Notification */
+    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 380px; }
+    .toast {
+        background: #1e293b; color: white; padding: 16px; border-radius: 16px; margin-bottom: 10px;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px;
+        font-size: 14px; animation: slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    .toast.success { border-left: 4px solid #10b981; }
+    .toast.error { border-left: 4px solid #f43f5e; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+
+<body>
+
+<div id="toast-container"></div>
+
+<div class="login-container">
+  <div class="login-box">
+    <div class="logo-icon"><i data-lucide="shield-check"></i></div>
+    <h2>เข้าสู่ระบบ</h2>
+    <p>ระบุอีเมลเพื่อรับรหัสผ่านครั้งเดียว (OTP)</p>
+    
+    <div class="input-group">
+      <label>อีเมลผู้ใช้งาน</label>
+      <input type="email" id="email" placeholder="name@email.com" autocomplete="email">
+    </div>
+
+    <div class="input-group">
+  <label>เบอร์โทร</label>
+  <input type="text" id="phone" placeholder="เช่น 0812345678">
+</div>
+
+    <div class="input-group">
+  <label>ชื่อ-สกุล</label>
+  <input type="text" id="fullname" placeholder="เช่น สมชาย ใจดี">
+</div>
+
+<div class="input-group">
+  <label>รหัสนักเรียน</label>
+  <input type="text" id="student_id" placeholder="เช่น 12345" maxlength="10">
+</div>
+
+    <button id="btnSendOTP" onclick="sendOTP()">
+      <i data-lucide="send" style="width:18px"></i> ส่งรหัส OTP
+    </button>
+
+    <div id="otp-section">
+      <div class="input-group">
+        <label>รหัส OTP (6 หลัก)</label>
+        <input type="text" id="otp" placeholder="••••••" maxlength="6" style="text-align: center; letter-spacing: 5px; font-size: 24px;">
+      </div>
+      <button id="btnVerify" onclick="verifyOTP()" style="background: #1e293b;">
+        ยืนยันตัวตน
+      </button>
+      <p id="timer" style="margin-top: 15px; font-size: 12px;"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icon = type === 'success' ? '✅' : '❌';
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+
+function sendOTP() {
+    let email = document.getElementById("email").value.trim().toLowerCase();
+    let phone = document.getElementById("phone").value.trim();
+    let fullname = document.getElementById("fullname").value.trim();
+    let studentId = document.getElementById("student_id").value.trim();
+
+    let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if(!emailPattern.test(email)) {
+        showToast("กรุณากรอกอีเมลให้ถูกต้อง", "error");
+        return;
+    }
+    
+    if (!/^[0-9]{10}$/.test(phone)) {
+      showToast("กรุณากรอกเบอร์โทรให้ถูกต้อง", "error");
+       return;
+    }
+
+    if(fullname === "") {
+        showToast("กรุณากรอกชื่อ-สกุล", "error");
+        return;
+    }
+
+    if(studentId === "" || !/^[0-9]+$/.test(studentId)) {
+        showToast("กรุณากรอกรหัสนักเรียนให้ถูกต้อง", "error");
+        return;
+    }
+
+    let btn = document.getElementById("btnSendOTP");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> กำลังส่ง...`;
+
+    google.script.run.withSuccessHandler(function(status) {
+        if (status === "ALREADY_SUBMITTED") {
+            showToast("อีเมลนี้ได้ทำการประเมินไปเรียบร้อยแล้ว", "error");
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="send" style="width:18px"></i> ส่งรหัส OTP`;
+            lucide.createIcons();
+        } else {
+            google.script.run.withSuccessHandler(function(res) {
+                showToast("📩 ส่งรหัส OTP ไปยังอีเมลของคุณแล้ว");
+                document.getElementById("otp-section").style.display = "block";
+                btn.innerHTML = `ส่งรหัสอีกครั้ง`;
+                startTimer(60);
+            }).sendOTP(email);
+        }
+    }).checkEmailStatus(email);
+}
+
+function startTimer(seconds) {
+    let btn = document.getElementById("btnSendOTP");
+    let timerDisp = document.getElementById("timer");
+    btn.disabled = true;
+    
+    let interval = setInterval(() => {
+        seconds--;
+        timerDisp.innerText = `หากไม่ได้รับรหัส สามารถส่งใหม่ได้ใน ${seconds} วินาที`;
+        if (seconds <= 0) {
+            clearInterval(interval);
+            btn.disabled = false;
+            timerDisp.innerText = "";
+        }
+    }, 1000);
+}
+
+function verifyOTP() {
+    let email = document.getElementById("email").value.trim().toLowerCase();
+    let phone = document.getElementById("phone").value.trim();
+    let otp = document.getElementById("otp").value.trim();
+    let btn = document.getElementById("btnVerify");
+
+    if(!otp) {
+        showToast("กรุณากรอกรหัส OTP", "error");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "กำลังตรวจสอบ...";
+
+    google.script.run.withSuccessHandler(function(status) {
+        if(status === "success") {
+    showToast("เข้าสู่ระบบสำเร็จ กำลังพาไปหน้าประเมิน...");
+    
+    let email = document.getElementById("email").value.trim().toLowerCase();
+    let fullname = document.getElementById("fullname").value.trim();
+    let studentId = document.getElementById("student_id").value.trim();
+
+    sessionStorage.setItem("user_email", email);
+    sessionStorage.setItem("phone", phone);
+    sessionStorage.setItem("user_fullname", fullname);
+    sessionStorage.setItem("student_id", studentId);
+
+    setTimeout(() => {
+        google.script.run.withSuccessHandler(function(url) {
+            window.top.location.href = url + "?page=Index";
+        }).getScriptUrl();
+    }, 1500);
+} else {
+            showToast("รหัส OTP ไม่ถูกต้องหรือหมดอายุ", "error");
+            btn.disabled = false;
+            btn.innerText = "ยืนยันตัวตน";
+        }
+    }).verifyOTP(email, otp);
+}
+</script>
+
+</body>
+</html>
