@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบติดตามภาวะซึมเศร้าวัยรุ่น — อำเภอเบตง</title>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #f0f4ff;
+      color: #1e1b4b;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+      background: #1e1b4b;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .hdr-l { display: flex; align-items: center; gap: 14px; }
+    .hdr-logo {
+      width: 44px; height: 44px;
+      background: #6366f1;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .hdr-logo i { color: #fff; font-size: 24px; }
+    .hdr-t  { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.3; }
+    .hdr-s  { font-size: 12px; color: #a5b4fc; margin-top: 2px; }
+    .hdr-r  { display: flex; align-items: center; gap: 14px; }
+    .pill-live {
+      display: flex; align-items: center; gap: 7px;
+      background: #166534; color: #bbf7d0;
+      font-size: 12px; font-weight: 600;
+      padding: 6px 14px; border-radius: 20px;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .dot { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; animation: blink 1.6s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+    .hdr-time { font-size: 13px; color: #c7d2fe; font-variant-numeric: tabular-nums; }
+
+    /* ── BODY ── */
+    .body { padding: 22px 28px 28px; max-width: 1200px; margin: auto; }
+
+    .sec-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: #6366f1; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .sec-label::before {
+      content: ''; width: 3px; height: 14px;
+      background: #6366f1; border-radius: 2px; display: inline-block;
+    }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 860px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+    .kc {
+      border-radius: 16px;
+      padding: 18px 16px 20px;
+      position: relative; overflow: hidden;
+    }
+    .kc-icon {
+      position: absolute; right: 14px; top: 14px;
+      width: 38px; height: 38px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .kc-icon i { font-size: 20px; }
+    .kc-label { font-size: 12px; font-weight: 600; letter-spacing: .03em; }
+    .kc-num   { font-size: 36px; font-weight: 700; line-height: 1; margin: 10px 0 4px; }
+    .kc-sub   { font-size: 11px; opacity: .72; }
+    .kc-bar   { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; border-radius: 0 0 16px 16px; }
+
+    .k1 { background: #eef2ff; color: #312e81; }
+    .k1 .kc-icon { background: #c7d2fe; color: #3730a3; }
+    .k1 .kc-bar  { background: #6366f1; }
+
+    .k2 { background: #fff1f2; color: #881337; }
+    .k2 .kc-icon { background: #fecdd3; color: #be123c; }
+    .k2 .kc-bar  { background: #f43f5e; }
+
+    .k3 { background: #ecfdf5; color: #064e3b; }
+    .k3 .kc-icon { background: #a7f3d0; color: #065f46; }
+    .k3 .kc-bar  { background: #10b981; }
+
+    .k4 { background: #fffbeb; color: #78350f; }
+    .k4 .kc-icon { background: #fde68a; color: #92400e; }
+    .k4 .kc-bar  { background: #f59e0b; }
+
+    /* ── CHART LAYOUT ── */
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    @media (max-width: 860px) { .row2, .row3 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 14px;
+      border: 1.5px solid #e0e7ff;
+    }
+    .card-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 3px; }
+    .card-ico  {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .card-ico i { font-size: 17px; }
+    .card-t { font-size: 14px; font-weight: 700; color: #1e1b4b; }
+    .card-s { font-size: 11px; color: #94a3b8; margin-bottom: 14px; padding-left: 42px; }
+
+    .cw  { position: relative; width: 100%; height: 215px; }
+    .cws { position: relative; width: 100%; height: 170px; }
+
+    /* ── LEGEND ── */
+    .leg-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .leg {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: #475569;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .leg-sq { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+    .leg b   { color: #1e1b4b; font-weight: 600; }
+
+    /* ── FOOTER ── */
+    .ftr {
+      background: #1e1b4b;
+      padding: 14px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .ftr-t { font-size: 12px; color: #a5b4fc; font-family: 'Sarabun', sans-serif; }
+    .btn-start {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 24px;
+      background: #6366f1; color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      font-family: 'Sarabun', sans-serif;
+      cursor: pointer; transition: background .2s, transform .15s;
+    }
+    .btn-start:hover { background: #4f46e5; transform: translateY(-1px); }
+    .btn-start i { font-size: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-logo"><i class="ti ti-heartbeat"></i></div>
+    <div>
+      <div class="hdr-t">ระบบติดตามภาวะซึมเศร้าวัยรุ่น</div>
+      <div class="hdr-s">อำเภอเบตง · แบบประเมิน PHQ-A · Real-time Dashboard</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="pill-live"><span class="dot"></span>Live</div>
+    <div class="hdr-time" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="body">
+
+  <!-- KPI -->
+  <div class="sec-label">ภาพรวมการคัดกรอง</div>
+  <div class="kpi-grid">
+    <div class="kc k1">
+      <div class="kc-icon"><i class="ti ti-users"></i></div>
+      <div class="kc-label">ผู้รับการประเมินทั้งหมด</div>
+      <div class="kc-num" id="total">—</div>
+      <div class="kc-sub">ราย (สะสม)</div>
+      <div class="kc-bar"></div>
+    </div>
+    <div class="kc k2">
+      <div class="kc-icon"><i class="ti ti-alert-circle"></i></div>
+      <div class="kc-label">กลุ่มเสี่ยงฆ่าตัวตาย</div>
+      <div class="kc-num" id="risk">—</div>
+      <div class="kc-sub">ต้องติดตามเร่งด่วน</div>
+      <div class="kc-bar"></div>
+    </div>
+    <div class="kc k3">
+      <div class="kc-icon"><i class="ti ti-circle-check"></i></div>
+      <div class="kc-label">กลุ่มปกติ</div>
+      <div class="kc-num" id="normalCount">—</div>
+      <div class="kc-sub">ไม่มีอาการซึมเศร้า</div>
+      <div class="kc-bar"></div>
+    </div>
+    <div class="kc k4">
+      <div class="kc-icon"><i class="ti ti-mood-sad"></i></div>
+      <div class="kc-label">ซึมเศร้าระดับสูง</div>
+      <div class="kc-num" id="highLevel">—</div>
+      <div class="kc-sub">ระดับมาก–รุนแรง</div>
+      <div class="kc-bar"></div>
+    </div>
+  </div>
+
+  <!-- ROW 1 -->
+  <div class="sec-label">รายละเอียดการกระจายตัว</div>
+  <div class="row2">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ico" style="background:#eef2ff"><i class="ti ti-chart-donut" style="color:#6366f1"></i></div>
+        <span class="card-t">ระดับความซึมเศร้า (PHQ-A)</span>
+      </div>
+      <div class="card-s">แบ่งตามเกณฑ์คะแนน 0–27</div>
+      <div class="cw"><canvas id="depressionChart" role="img" aria-label="ระดับความซึมเศร้า PHQ-A">กำลังโหลดข้อมูล</canvas></div>
+      <div class="leg-row" id="dep-leg"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ico" style="background:#f0fdf4"><i class="ti ti-building" style="color:#10b981"></i></div>
+        <span class="card-t">จำนวนแยกตามโรงเรียน</span>
+      </div>
+      <div class="card-s">สถานศึกษาในอำเภอเบตง</div>
+      <div class="cw"><canvas id="schoolChart" role="img" aria-label="จำนวนแยกตามโรงเรียน">กำลังโหลดข้อมูล</canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 2 -->
+  <div class="row3">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ico" style="background:#fdf4ff"><i class="ti ti-gender-bigender" style="color:#a855f7"></i></div>
+        <span class="card-t">สัดส่วนเพศ</span>
+      </div>
+      <div class="card-s">เปอร์เซ็นต์แยกตามเพศสภาพ</div>
+      <div class="cws"><canvas id="genderChart" role="img" aria-label="สัดส่วนเพศ">กำลังโหลดข้อมูล</canvas></div>
+      <div class="leg-row" id="gen-leg"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ico" style="background:#fff7ed"><i class="ti ti-chart-bar" style="color:#f97316"></i></div>
+        <span class="card-t">ช่วงอายุ</span>
+      </div>
+      <div class="card-s">จำนวนผู้ประเมินแต่ละช่วงอายุ</div>
+      <div class="cws"><canvas id="ageChart" role="img" aria-label="จำนวนตามช่วงอายุ">กำลังโหลดข้อมูล</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ico" style="background:#fff1f2"><i class="ti ti-shield-exclamation" style="color:#f43f5e"></i></div>
+        <span class="card-t">สถานะความเสี่ยง</span>
+      </div>
+      <div class="card-s">ภาพรวมการแบ่งกลุ่มความเสี่ยง</div>
+      <div class="cws"><canvas id="riskChart" role="img" aria-label="สถานะความเสี่ยง">กำลังโหลดข้อมูล</canvas></div>
+      <div class="leg-row" id="risk-leg"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── FOOTER ── -->
+<div class="ftr">
+  <div class="ftr-t">โรงพยาบาลเบตง · ระบบสุขภาพจิตวัยรุ่น · สุขภาพดิจิทัล</div>
+  <button class="btn-start" onclick="goToLogin()">
+    <i class="ti ti-clipboard-list"></i>เริ่มทำแบบประเมิน
+  </button>
+</div>
+
+<script>
+  /* ── COLOR PALETTE ── */
+  const PAL = ['#6366f1','#f43f5e','#10b981','#f59e0b','#a855f7','#06b6d4','#f97316','#ec4899','#64748b'];
+
+  /* ── CLOCK ── */
+  function tick() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  /* ── CHART REGISTRY ── */
+  const CHS = {};
+
+  function mkChart(id, type, labels, data) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (CHS[id]) CHS[id].destroy();
+    const bar = type === 'bar';
+    const pie = !bar;
+    CHS[id] = new Chart(ctx, {
+      type,
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: PAL.slice(0, data.length),
+          borderWidth:     pie ? 2 : 0,
+          borderColor:     '#fff',
+          borderRadius:    bar ? 6 : 0,
+          hoverOffset:     10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1e1b4b',
+            padding: 10,
+            titleFont: { family: 'Sarabun', size: 12 },
+            bodyFont:  { family: 'Sarabun', size: 12 },
+            callbacks: { label: c => ' ' + c.label + ': ' + c.raw + ' ราย' }
+          }
+        },
+        scales: bar ? {
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f5f9' },
+            ticks: { font: { family: 'Sarabun', size: 11 }, color: '#64748b' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: 'Sarabun', size: 11 }, color: '#64748b', maxRotation: 30 }
+          }
+        } : {}
+      }
+    });
+  }
+
+  function mkLeg(elId, labels, data) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const tot = data.reduce((a, b) => a + b, 0);
+    el.innerHTML = labels.map((l, i) =>
+      `<span class="leg">
+        <span class="leg-sq" style="background:${PAL[i]}"></span>
+        ${l} <b>${data[i]}</b> (${Math.round(data[i] / tot * 100)}%)
+      </span>`
+    ).join('');
+  }
+
+  /* ── RENDER ── */
+  function render(d) {
+    document.getElementById('total').textContent       = d.total;
+    document.getElementById('risk').textContent        = d.risk;
+    document.getElementById('normalCount').textContent = d.normal;
+    document.getElementById('highLevel').textContent   = d.high;
+
+    const dL = Object.keys(d.dep),    dD = Object.values(d.dep);
+    const gL = Object.keys(d.gender), gD = Object.values(d.gender);
+    const rL = Object.keys(d.riskS),  rD = Object.values(d.riskS);
+
+    mkChart('depressionChart', 'doughnut', dL, dD);
+    mkLeg('dep-leg', dL, dD);
+
+    mkChart('schoolChart', 'bar', Object.keys(d.school), Object.values(d.school));
+
+    mkChart('genderChart', 'pie', gL, gD);
+    mkLeg('gen-leg', gL, gD);
+
+    mkChart('ageChart', 'bar', Object.keys(d.age), Object.values(d.age));
+
+    mkChart('riskChart', 'doughnut', rL, rD);
+    mkLeg('risk-leg', rL, rD);
+  }
+
+  function loadData() {
+
+    if (typeof google === 'undefined' || !google.script) {
+      console.log("Demo mode");
+      render({
+        total: 1,
+        risk: 0,
+        normal: 1,
+        high: 0,
+        dep: { ปกติ: 1, เล็กน้อย: 0, ปานกลาง: 0, มาก: 0, รุนแรง: 0 },
+        school: { ทดสอบ: 1 },
+        gender: { หญิง: 1 },
+        age: { '11-12 ปี': 0, '13-14 ปี': 1, '15-16 ปี': 0, '17-18 ปี': 0, '19-20 ปี': 0 },
+        riskS: { ปกติ: 1 }
+      });
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(data) {
+
+        console.log("DATA RECEIVED:", data); // ดูโครงสร้างข้อมูลที่เข้ามาใน Console
+
+        if (!data || !data.length) {
+          console.log("❌ ไม่มีข้อมูลในระบบ");
+          render({
+            total: 0, risk: 0, normal: 0, high: 0,
+            dep: { ปกติ: 0 }, school: { 'ไม่มีข้อมูล': 0 },
+            gender: { 'ไม่มีข้อมูล': 0 }, 
+            age: { '11-12 ปี': 0, '13-14 ปี': 0, '15-16 ปี': 0, '17-18 ปี': 0, '19-20 ปี': 0 },
+            riskS: { ปกติ: 0 }
+          });
+          return;
+        }
+
+        let total = data.length;
+        let riskCount = 0;
+        let normalCount = 0;
+        let highCount = 0;
+
+        const school = {}, gender = {}, riskS = {};
+        const age = { '11-12 ปี': 0, '13-14 ปี': 0, '15-16 ปี': 0, '17-18 ปี': 0, '19-20 ปี': 0 };
+        const dep = { ปกติ: 0, เล็กน้อย: 0, ปานกลาง: 0, มาก: 0, รุนแรง: 0 };
+
+        data.forEach(d => {
+          // ✅ normalize ค่าป้องกันบั๊ก
+          const score = Number(d.totalScore) || 0;
+          const ageNum = parseInt(d.age) || 0;
+          const riskText = (d.riskStatus || "ปกติ").trim();
+
+          // ✅ ตรวจสอบกลุ่มเสี่ยงฆ่าตัวตาย / ซึมเศร้า
+          if (riskText.includes("เสี่ยง") || score >= 10) {
+            riskCount++;
+          }
+
+          // ✅ จัดกลุ่มระดับความซึมเศร้า (PHQ-A)
+          if (score <= 4) {
+            normalCount++;
+            dep.ปกติ++;
+          } else if (score <= 9) {
+            dep.เล็กน้อย++;
+          } else if (score <= 14) {
+            dep.ปานกลาง++;
+          } else if (score <= 19) {
+            highCount++;
+            dep.มาก++;
+          } else {
+            highCount++;
+            dep.รุนแรง++;
+          }
+
+          // ✅ จัดกลุ่มช่วงอายุ
+          if (ageNum >= 11 && ageNum <= 12) age['11-12 ปี']++;
+          else if (ageNum >= 13 && ageNum <= 14) age['13-14 ปี']++;
+          else if (ageNum >= 15 && ageNum <= 16) age['15-16 ปี']++;
+          else if (ageNum >= 17 && ageNum <= 18) age['17-18 ปี']++;
+          else if (ageNum >= 19 && ageNum <= 20) age['19-20 ปี']++;
+
+          // ✅ จัดกลุ่มโรงเรียน เพศ และสถานะความเสี่ยง
+          const sc = d.school || 'ไม่ระบุ';
+          const g  = d.gender || 'ไม่ระบุ';
+          const r  = riskText || 'ไม่ทราบ';
+
+          school[sc] = (school[sc] || 0) + 1;
+          gender[g]  = (gender[g]  || 0) + 1;
+          riskS[r]   = (riskS[r]   || 0) + 1;
+        });
+
+        // สั่งอัปเดตหน้าจอแดชบอร์ด
+        render({
+          total,
+          risk: riskCount,
+          normal: normalCount,
+          high: highCount,
+          dep,
+          school,
+          gender,
+          age,
+          riskS
+        });
+
+      })
+      .withFailureHandler(function(err){
+        console.error("🔥 Google Script Error:", err);
+      })
+      .getDashboardData();
+  }
+
+  /* ── NAVIGATION ── */
+  function goToLogin() {
+    if (typeof google === 'undefined' || !google.script) {
+      alert('โหมดทดสอบ — ปุ่มนี้จะนำไปยังแบบประเมินเมื่อ Deploy บน Google Apps Script');
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(url => { window.top.location.href = url + '?page=login'; })
+      .getScriptUrl();
+  }
+
+  /* ── INIT ── */
+  window.addEventListener('load', function () {
+    loadData();
+    setInterval(loadData, 60000);
+  });
+</script>
+</body>
+</html>
